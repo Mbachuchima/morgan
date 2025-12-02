@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Morgan Meet and Greet Form</title>
+  <style>
+    :root{
+      --bg:#f4f6fb; --card:#ffffff; --accent:#0b74de; --muted:#6b7280;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:var(--bg); margin:0; padding:40px; color:#0f172a}
+    .container{max-width:720px; margin:0 auto}
+    .card{background:var(--card); padding:28px; border-radius:12px; box-shadow:0 6px 24px rgba(11,20,40,0.06)}
+    h1{margin:0 0 8px; font-size:22px}
+    p.lead{margin:0 0 18px; color:var(--muted)}
+    form .row{display:flex; gap:12px}
+    label{display:block; font-size:13px; margin-bottom:6px}
+    input[type=text], input[type=tel], textarea, select{
+      width:100%; padding:10px 12px; border:1px solid #e6e9ef; border-radius:8px; font-size:14px; background:#fff
+    }
+    textarea{min-height:96px; resize:vertical}
+    .field{margin-bottom:14px}
+    .actions{display:flex; gap:10px; align-items:center; margin-top:6px}
+    button{background:var(--accent); color:#fff; border:0; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600}
+    button.secondary{background:transparent; color:var(--accent); border:1px solid #dbeafe}
+    .note{font-size:13px; color:var(--muted)}
+    .result{margin-top:18px; padding:16px; border-radius:10px; background:#fef3c7; color:#92400e; display:none}
+    .summary{margin-top:12px; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #eef2ff}
+    .sr-only{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card" role="region" aria-labelledby="form-heading">
+      <h1 id="form-heading">Morgan Meet and Greet Form</h1>
+      <p class="lead">Fill this form to register a meet &amp; greet with Morgan. After you submit, you'll see the next step.</p>
+
+      <form id="greetForm" novalidate>
+        <div class="field">
+          <label for="name">Full name</label>
+          <input id="name" name="name" type="text" placeholder="Your full name" required />
+        </div>
+
+        <div class="field">
+          <label for="phone">Phone number</label>
+          <input id="phone" name="phone" type="tel" placeholder="+1 123 4567" pattern="\\+?[0-9 \-()]{7,}" required />
+        </div>
+
+        <div class="field">
+          <label for="purpose">Purpose of greeting</label>
+          <select id="purpose" name="purpose" required>
+            <option value="">-- Select purpose --</option>
+            <option>Fan message</option>
+            <option>Business / Collaboration</option>
+            <option>Media / Interview</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="important">Important details (things we should know)</label>
+          <textarea id="important" name="important" placeholder="Allergies, accessibility needs, short message you want Morgan to know..."></textarea>
+        </div>
+
+        <div class="actions">
+          <button type="submit">Submit</button>
+          <button type="button" class="secondary" id="clearBtn">Clear</button>
+          <div class="note" aria-live="polite" style="margin-left:auto">All fields marked required must be filled.</div>
+        </div>
+
+        <div id="result" class="result" role="status" aria-hidden="true">
+          <!-- message inserted by JS -->
+        </div>
+
+        <div id="summary" class="summary" style="display:none" aria-hidden="true"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('greetForm');
+    const result = document.getElementById('result');
+    const summary = document.getElementById('summary');
+    const clearBtn = document.getElementById('clearBtn');
+
+    function validatePhone(ph){
+      // very lenient validation: at least 7 digits total
+      const digits = ph.replace(/[^0-9]/g, '');
+      return digits.length >= 7;
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      // gather values
+      const name = form.name.value.trim();
+      const phone = form.phone.value.trim();
+      const purpose = form.purpose.value;
+      const important = form.important.value.trim();
+
+      // simple validation
+      if(!name){
+        alert('Please enter your name.');
+        form.name.focus();
+        return;
+      }
+      if(!phone || !validatePhone(phone)){
+        alert('Please enter a valid phone number.');
+        form.phone.focus();
+        return;
+      }
+      if(!purpose){
+        alert('Please select the purpose of the greeting.');
+        form.purpose.focus();
+        return;
+      }
+
+      // show special message exactly as requested
+      result.textContent = 'get the apple card ready';
+      result.style.display = 'block';
+      result.setAttribute('aria-hidden','false');
+
+      // show a compact summary underneath
+      summary.innerHTML = `
+        <strong>Submission received</strong>
+        <div><strong>Name:</strong> ${escapeHtml(name)}</div>
+        <div><strong>Phone:</strong> ${escapeHtml(phone)}</div>
+        <div><strong>Purpose:</strong> ${escapeHtml(purpose)}</div>
+        ${important ? `<div><strong>Important:</strong> ${escapeHtml(important)}</div>` : ''}
+      `;
+      summary.style.display = 'block';
+      summary.setAttribute('aria-hidden','false');
+
+      // optionally disable form to prevent double submits
+      Array.from(form.elements).forEach(el => el.disabled = true);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      form.reset();
+      result.style.display = 'none';
+      summary.style.display = 'none';
+      Array.from(form.elements).forEach(el => el.disabled = false);
+    });
+
+    function escapeHtml(unsafe){
+      return unsafe
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+  </script>
+</body>
+</html>
